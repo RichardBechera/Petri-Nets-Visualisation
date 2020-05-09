@@ -40,7 +40,6 @@ namespace PetriVisualisation
     
     public class Graph
     {
-        private bool _oriented;
         private bool _strict;
         private string _id;
         private List<stmt> _content;
