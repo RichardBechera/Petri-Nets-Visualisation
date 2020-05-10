@@ -43,10 +43,10 @@ namespace PetriVisualisation
     {
         public bool _strict { get; set; }
         public string _id { get; set; }
-        public List<stmt> _content { get; set; }
+        public List<Stmt> _content { get; set; }
         public GraphType _type { get; set; }
 
-        public Graph(bool strict, string id, GraphType type, List<stmt> content)
+        public Graph(bool strict, string id, GraphType type, List<Stmt> content)
         {
             _strict = strict;
             _id = id;
@@ -56,19 +56,24 @@ namespace PetriVisualisation
 
     }
 
-    public class stmt
+    //TODO delete stmt class and use only interface instead
+    public class Stmt
     {
-        private StmtType _type;
-        private string _content;
+        public StmtType _type;
+        public Stmt_ _content;
     }
 
-    public class Subgraph
+    public interface Stmt_
+    {
+    }
+
+    public class Subgraph : Stmt_
     {
         private string _id;
-        private List<stmt> _content;
+        private List<Stmt> _content;
     }
 
-    public class NodeStmt
+    public class NodeStmt : Stmt_
     {
         private NodeId node;
         private string attr = null;
@@ -80,21 +85,21 @@ namespace PetriVisualisation
         private string _port = null;
     }
 
-    public class AttrStmt
+    public class AttrStmt : Stmt_
     {
         private AttrType _type;
-        private List<AList> _attrList;
+        public List<AList> _attrList;
     }
 
     public class AList
     {
-        private string _id1;
-        private string _id2;
-        private AList _reminder = null;
+        public string _id1;
+        public string _id2;
+        public AList _reminder = null;
         public bool hasNext = false;
     }
 
-    public class EdgeStmt
+    public class EdgeStmt : Stmt_
     {
         private EdgeType _type;
         private EdgeRHS _rhs;
