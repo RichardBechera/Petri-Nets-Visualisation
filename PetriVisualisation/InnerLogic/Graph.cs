@@ -6,8 +6,9 @@ namespace PetriVisualisation
     //TODO Type enums merge into less enums, move into separate folders/files
     public enum GraphType
     {
-        digraph,
-        graph
+        Digraph,
+        Graph,
+        Empty
     }
 
     public enum StmtType
@@ -40,10 +41,18 @@ namespace PetriVisualisation
     
     public class Graph
     {
-        private bool _strict;
-        private string _id;
-        private List<stmt> _content;
-        private GraphType _type;
+        public bool _strict { get; set; }
+        public string _id { get; set; }
+        public List<stmt> _content { get; set; }
+        public GraphType _type { get; set; }
+
+        public Graph(bool strict, string id, GraphType type, List<stmt> content)
+        {
+            _strict = strict;
+            _id = id;
+            _type = type;
+            _content = content;
+        }
 
     }
 
