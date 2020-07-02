@@ -10,6 +10,11 @@ namespace PetriVisualisation
     {
         public override void Initialize()
         {
+            //! added here so i could debug parser, proper avalonia using later
+            Loader blah = new Loader();
+            blah.MyParseMethod();
+            //! ends
+            
             AvaloniaXamlLoader.Load(this);
         }
 

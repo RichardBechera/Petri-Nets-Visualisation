@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
 using System;
+using System.Reflection.Metadata;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using PetriVisualisation.ViewModels;
@@ -16,7 +17,6 @@ namespace PetriVisualisation
         {
             var name = data.GetType().FullName.Replace("ViewModel", "View");
             var type = Type.GetType(name);
-
             if (type != null)
             {
                 return (Control)Activator.CreateInstance(type);
