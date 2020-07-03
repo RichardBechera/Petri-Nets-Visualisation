@@ -12,19 +12,41 @@ namespace PetriVisualisation
         Empty
     }
 
+    public enum Enter
+    {
+        Enter,
+        Leave
+    }
+
+    public enum Rule
+    {
+        Graph,
+        Node,
+        Subgraph, 
+        Id,
+        Port,    //unused
+        AttrList,
+        AttrStmt,
+        Alist,
+        EdgeRhs,
+        EdgeStmt
+        
+    }
+
     public enum AttrType
     {
         Graph,
         Node,
-        Edge
+        Edge,
+        None
     }
 
     public abstract class IGraph
     {
-        public List<IGraph> succs;
-        public Dictionary<string, string> GraphAttr;
-        public Dictionary<string, string> NodeAttr;
-        public Dictionary<string, string> EdgeAttr;
+        public List<IGraph> succs = new List<IGraph>();
+        public Dictionary<string, string> GraphAttr = new Dictionary<string, string>();
+        public Dictionary<string, string> NodeAttr = new Dictionary<string, string>();
+        public Dictionary<string, string> EdgeAttr = new Dictionary<string, string>();
         public string id = "";
     }
 
@@ -39,15 +61,8 @@ namespace PetriVisualisation
     }
     public class Graph : IGraph
     {
-        public bool _strict { get; set; }
+        public bool _strict = false;
         public GraphType _type { get; set; }
-
-        public Graph(bool strict, string id, GraphType type)
-        {
-            _strict = strict;
-            _type = type;
-        }
-
     }
     
     
