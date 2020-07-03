@@ -19,7 +19,7 @@ namespace PetriVisualisation
     {
         public Graph graph;
         private Rule _rule;
-        private IGraph workingBranch;
+        private Stack<IGraph> workingBranch = new Stack<IGraph>();
         private AttrType _attrOn = AttrType.None;
         private List<string> _idPool = new List<string>();
         
@@ -54,31 +54,34 @@ namespace PetriVisualisation
                 switch (e.Rule)
                 {
                     case Rule.Graph:
+                        workingBranch.Pop();
                         return; //TODO file end
                     case Rule.Subgraph:
                     case Rule.Node:
-                        workingBranch = graph;
+                        workingBranch.Pop();
                         break;
                     case Rule.AttrStmt:
                         AttributeAssigner();
                         _attrOn = AttrType.None;
+                        _idPool.Clear();
                         break;
-                    default:
-                        return;
                 }
+                return;
             }
             switch (e.Rule)
             {
                 case Rule.Graph:
-                    workingBranch = graph;
+                    workingBranch.Push(graph);
                     break;
                 case Rule.Subgraph:
-                    workingBranch = new Subgraph();
-                    graph.succs.Add(workingBranch);
+                    workingBranch.Push(new Subgraph());
+                    graph.subgraphs.Add(workingBranch.Peek());
                     break;
                 case Rule.Node:
-                    workingBranch = new Node();
-                    graph.succs.Add(workingBranch);
+                    var node = new Node();
+                    node.belonging = workingBranch.Peek().id;
+                    workingBranch.Push(node);
+                    graph.succs.Add(workingBranch.Peek());
                     break;
             }
         }
@@ -145,7 +148,7 @@ namespace PetriVisualisation
                 return;
             }
             //TODO check if Id is in correct format
-            workingBranch.id = contains;
+            workingBranch.Peek().id = contains;
         }
 
         private void AttributeHandler(string contains)
@@ -169,13 +172,13 @@ namespace PetriVisualisation
                 switch (_attrOn)
                 {
                     case AttrType.Graph:
-                        workingBranch.GraphAttr.Add(_idPool[i], _idPool[i+1]);
+                        workingBranch.Peek().GraphAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.Node:
-                        workingBranch.NodeAttr.Add(_idPool[i], _idPool[i+1]);
+                        workingBranch.Peek().NodeAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.Edge:
-                        workingBranch.EdgeAttr.Add(_idPool[i], _idPool[i+1]);
+                        workingBranch.Peek().EdgeAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.None:
                         break;

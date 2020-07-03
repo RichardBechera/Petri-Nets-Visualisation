@@ -53,15 +53,19 @@ namespace PetriVisualisation
     public class Subgraph : IGraph
     {
         private string _id;
+        public string belonging;
     }
 
     public class Node : IGraph
     {
         private int port;
+        public string belonging;
     }
     public class Graph : IGraph
     {
         public bool _strict = false;
+        
+        public List<IGraph> subgraphs = new List<IGraph>();
         public GraphType _type { get; set; }
     }
     
