@@ -85,6 +85,7 @@ namespace PetriVisualisation.Parser_files
 
         public override void ExitAttr_list(DOTParser.Attr_listContext context)
         {
+            OnRuleLeave(Rule.AttrList, context.GetText());
             base.ExitAttr_list(context);
         }
 
@@ -107,6 +108,7 @@ namespace PetriVisualisation.Parser_files
 
         public override void ExitEdge_stmt(DOTParser.Edge_stmtContext context)
         {
+            OnRuleLeave(Rule.EdgeStmt, context.GetText());
             base.ExitEdge_stmt(context);
         }
 

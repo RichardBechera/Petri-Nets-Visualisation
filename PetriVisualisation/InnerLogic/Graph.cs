@@ -38,6 +38,7 @@ namespace PetriVisualisation
         Graph,
         Node,
         Edge,
+        EdgeStmt,
         None
     }
 
@@ -66,7 +67,16 @@ namespace PetriVisualisation
         public bool _strict = false;
         
         public List<IGraph> subgraphs = new List<IGraph>();
+        
+        public List<Edge> edges = new List<Edge>();
         public GraphType _type { get; set; }
+    }
+
+    public class Edge
+    {
+        public string headId;
+        public string tailId;
+        public Dictionary<string, string> EdgeAttr = new Dictionary<string, string>();
     }
     
     

@@ -22,6 +22,8 @@ namespace PetriVisualisation
         private Stack<IGraph> workingBranch = new Stack<IGraph>();
         private AttrType _attrOn = AttrType.None;
         private List<string> _idPool = new List<string>();
+        private bool edgeRequired = false;
+        private List<string> _edgePool = new List<string>();
         
         
         //TODO method should take path to file or later add raw text or file as it is
@@ -65,6 +67,12 @@ namespace PetriVisualisation
                         _attrOn = AttrType.None;
                         _idPool.Clear();
                         break;
+                    case Rule.EdgeStmt:
+                        edgeRequired = false;
+                        _attrOn = AttrType.None;
+                        setEdgeFromPool();
+                        _edgePool.Clear();
+                        break;
                 }
                 return;
             }
@@ -82,6 +90,17 @@ namespace PetriVisualisation
                     node.belonging = workingBranch.Peek().id;
                     workingBranch.Push(node);
                     graph.succs.Add(workingBranch.Peek());
+                    break;
+                case Rule.EdgeStmt:
+                    edgeRequired = true;
+                    graph.edges.Add(new Edge());
+                    break;
+                case Rule.Alist:
+                    if (edgeRequired)
+                    {
+                        edgeRequired = false;
+                        _attrOn = AttrType.EdgeStmt;
+                    }
                     break;
             }
         }
@@ -105,6 +124,11 @@ namespace PetriVisualisation
                 case Rule.Port:
                     break;
                 case Rule.AttrList:
+                    if (_attrOn == AttrType.EdgeStmt)
+                    {
+                        AttrListLeaveHandler();
+                    }
+                    //TODO if edge on turn off else ignore
                     break;
                 case Rule.AttrStmt:
                     AttributeHandler(e.Contains);
@@ -114,8 +138,6 @@ namespace PetriVisualisation
                 case Rule.EdgeRhs:
                     break;
                 case Rule.EdgeStmt:
-                    break;
-                default:
                     break;
             }
 
@@ -142,6 +164,11 @@ namespace PetriVisualisation
 
         private void IdHandler(string contains)
         {
+            if (edgeRequired)
+            {
+                _edgePool.Add(contains);
+                return;
+            }
             if (_attrOn != AttrType.None)
             {
                 _idPool.Add(contains);
@@ -181,11 +208,34 @@ namespace PetriVisualisation
                         workingBranch.Peek().EdgeAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.None:
+                    case AttrType.EdgeStmt:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
+        }
+
+        private void AttrListLeaveHandler()
+        {
+            if (_edgePool.Count % 2 != 0)
+                throw new Exception(message:"Wrong attribute format");
+            for (var i = 0; i < _edgePool.Count; i += 2)
+            {
+                graph.edges.Last().EdgeAttr.Add(_edgePool[i], _edgePool[i+1]);
+            }
+        }
+
+        private void setEdgeFromPool()
+        {
+            if (_edgePool.Count < 2)
+            {
+                throw new Exception(message:"Edge needs at least  vertexes");
+            }
+            
+            graph.edges.Last().headId = _edgePool[0];
+            graph.edges.Last().tailId = _edgePool[1];
+            //TODO later implement if more vertexes in one row
         }
         
     }
