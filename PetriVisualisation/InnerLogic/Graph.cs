@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace PetriVisualisation
 {
@@ -11,21 +12,6 @@ namespace PetriVisualisation
         Empty
     }
 
-    public enum StmtType
-    {
-        NodeStmt,
-        EdgeStmt,
-        AttrStmt,
-        Id,
-        Subgraph
-    }
-
-    public enum EdgeType
-    {
-        NodeId,
-        Subgraph
-    }
-
     public enum AttrType
     {
         Graph,
@@ -33,86 +19,38 @@ namespace PetriVisualisation
         Edge
     }
 
-    public enum EdgePart
+    public abstract class IGraph
     {
-        NodeId,
-        Subgraph
+        public List<IGraph> succs;
+        public Dictionary<string, string> GraphAttr;
+        public Dictionary<string, string> NodeAttr;
+        public Dictionary<string, string> EdgeAttr;
+        public string id = "";
     }
-    
-    public class Graph
+
+    public class Subgraph : IGraph
+    {
+        private string _id;
+    }
+
+    public class Node : IGraph
+    {
+        private int port;
+    }
+    public class Graph : IGraph
     {
         public bool _strict { get; set; }
-        public string _id { get; set; }
-        public List<Stmt> _content { get; set; }
         public GraphType _type { get; set; }
 
-        public Graph(bool strict, string id, GraphType type, List<Stmt> content)
+        public Graph(bool strict, string id, GraphType type)
         {
             _strict = strict;
-            _id = id;
             _type = type;
-            _content = content;
         }
 
     }
-
-    //TODO delete stmt class and use only interface instead
-    public class Stmt
-    {
-        public StmtType _type;
-        public Stmt_ _content;
-    }
-
-    public interface Stmt_
-    {
-    }
-
-    public class Subgraph : Stmt_
-    {
-        private string _id;
-        private List<Stmt> _content;
-    }
-
-    public class NodeStmt : Stmt_
-    {
-        private NodeId node;
-        private string attr = null;
-    }
     
-    public class NodeId
-    {
-        private string _id;
-        private string _port = null;
-    }
-
-    public class AttrStmt : Stmt_
-    {
-        private AttrType _type;
-        public List<AList> _attrList;
-    }
-
-    public class AList
-    {
-        public string _id1;
-        public string _id2;
-        public AList _reminder = null;
-        public bool hasNext = false;
-    }
-
-    public class EdgeStmt : Stmt_
-    {
-        private EdgeType _type;
-        private EdgeRHS _rhs;
-        private List<AList> _attrLists = null;
-    }
-
-    public class EdgeRHS
-    {
-        private bool _directed;
-        private EdgeType _type;
-        private EdgeRHS _rhs = null;
-        public bool hasNext = false;
-    }
+    
     
     
     /*

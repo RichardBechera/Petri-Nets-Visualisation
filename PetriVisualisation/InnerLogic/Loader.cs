@@ -28,7 +28,6 @@ namespace PetriVisualisation
             IParseTree tree = parser.graph();
             KeyPrinter printer = new KeyPrinter();
             ParseTreeWalker.Default.Walk(printer, tree);
-            var whatever = 5;
         }
     }
 }
