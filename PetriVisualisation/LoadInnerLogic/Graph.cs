@@ -73,11 +73,13 @@ namespace PetriVisualisation
         public List<Edge> edges = new List<Edge>();
         public GraphType _type { get; set; }
 
+        //not needed, succs only contain nodes
         public List<Node> onlyNodes() => succs
             .Where(graph => new Typecheck<IGraph, Node>(graph).CanConvert)
                 .ToList()
                 .ConvertAll(node => (Node) node);
         
+        //not needed, subgraphs only contain subgraphs
         public List<Subgraph> onlySubgraphs() => subgraphs
             .Where(graph => new Typecheck<IGraph, Subgraph>(graph).CanConvert)
             .ToList()
