@@ -54,7 +54,12 @@ namespace PetriVisualisation.Graph_Algorithms
         {
             component.flag = true;
             if (component.outside != null)
-                topoOnPetriGraph(stack, component.outside);
+                foreach (var outside in component.outside)
+                {
+                    if (!outside.flag)
+                        topoOnPetriGraph(stack, outside);
+                }
+                
             stack.Push(component);
         }
         
@@ -66,36 +71,58 @@ namespace PetriVisualisation.Graph_Algorithms
             {
                 if (c.incoming != null)
                 {
+                    var res = new List<StrongComponent>();
                     foreach (var c1 in components.Where(c1 => !c1.Equals(c) && c1.outgoing != null).Where(c1 => c1.nodes.Exists(node => node.succs
                         .Exists(nd => nd.Item1.Equals(c.incoming)))))
                     {
-                        c.inside = c1;
-                        break;
+                        res.Add(c1);
                     }
-                }
 
+                    c.inside = res.Count > 0 ? res : null;
+                }
+               
+                var res2 = new List<StrongComponent>();
                 if (c.outgoing == null) continue;
                 {
-                    foreach (var c2 in components.Where(c2 => !c2.Equals(c) && c2.incoming != null).Where(c2 => c2.nodes.Exists(node => c.outgoing.succs.Exists(nd => nd.Item1.Equals(node)))))
+                    foreach (var c2 in components.Where(c2 => !c2.Equals(c) && c2.incoming != null).Where(c2 => c2.nodes.Exists(node => c.outgoing.Any(k => k.succs.Exists(nd => nd.Item1.Equals(node))))))
                     {
-                        c.outside = c2;
-                        break;
+                        res2.Add(c2);
                     }
+
+                    c.outside = res2.Count > 0 ? res2 : null;
                 }
             }
         }
 
         private static void findInAndOut(StrongComponent c, List<Node> nodes)
         {
-            c.incoming = c.nodes?
-                .FirstOrDefault(node => nodes
-                    .Any(nd => nd.succs
-                        .Any(n => n.Item1
-                            .Equals(node))));
-            c.outgoing = c.nodes?
-                .FirstOrDefault(node => node.succs
-                    .Any(nd => nodes
-                        .Contains(nd.Item1)));
+            var res = new List<Node>();
+            var res2 = new List<Node>();
+            foreach (var cNode in c.nodes)
+            {
+                if (nodes.Exists(node => node.succs.Exists(nd => nd.Item1.Equals(cNode))))
+                {
+                    res.Add(cNode);
+                }
+
+                if (cNode.succs.Exists(nd => nodes.Exists(node => node.Equals(nd.Item1))))
+                {
+                    res2.Add(cNode);
+                }
+            }
+
+            c.incoming = res.Count > 0 ? res : null;
+            c.outgoing = res2.Count > 0 ? res2 : null;
+            
+            // c.incoming = new List<Node>().AddRange(c.nodes
+            //     .Where(node => nodes
+            //         .Any(nd => nd.succs
+            //             .Any(n => n.Item1
+            //                 .Equals(node)))));
+            // c.outgoing = new List<Node>().AddRange(c.nodes
+            //     .Where(node => node.succs
+            //         .Any(nd => nodes
+            //             .Contains(nd.Item1))));
         }
 
         private static void componentDfs(string id, IReadOnlyDictionary<string, Pair<Node, bool>> visited, List<Node> components, List<Node> nodes)
