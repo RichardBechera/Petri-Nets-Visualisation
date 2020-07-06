@@ -1,15 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
-using Avalonia.Controls;
-using ReactiveUI;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using PetriVisualisation.Parser_files;
-using SharpDX.Direct3D11;
 
 
 namespace PetriVisualisation

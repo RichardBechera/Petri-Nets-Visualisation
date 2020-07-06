@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using PetriVisualisation.Graph_Algorithms;
 
 namespace PetriVisualisation
 {
@@ -70,6 +72,16 @@ namespace PetriVisualisation
         
         public List<Edge> edges = new List<Edge>();
         public GraphType _type { get; set; }
+
+        public List<Node> onlyNodes() => succs
+            .Where(graph => new Typecheck<IGraph, Node>(graph).CanConvert)
+                .ToList()
+                .ConvertAll(node => (Node) node);
+        
+        public List<Subgraph> onlySubgraphs() => subgraphs
+            .Where(graph => new Typecheck<IGraph, Subgraph>(graph).CanConvert)
+            .ToList()
+            .ConvertAll(node => (Subgraph) node);
     }
 
     public class Edge
@@ -78,10 +90,10 @@ namespace PetriVisualisation
         public string tailId;
         public Dictionary<string, string> EdgeAttr = new Dictionary<string, string>();
     }
-    
-    
-    
-    
+
+
+
+
     /*
 graph	    :	[ strict ] (graph | digraph) [ ID ] '{' stmt_list '}'
 stmt_list	:	[ stmt [ ';' ] stmt_list ]
