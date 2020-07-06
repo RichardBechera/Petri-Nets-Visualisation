@@ -28,9 +28,15 @@ namespace PetriVisualisation
         
         //TODO method should take path to file or later add raw text or file as it is
         //TODO remake into async
-        public void MyParseMethod()
+        public Graph LoadGraph(string path)
         {
-            ICharStream stream = CharStreams.fromPath("/home/richard/Downloads/petrinet18-02-2020_10-20-31.dot"); //random file for testing
+            MyParseMethod(path);
+            return graph;
+        }
+        
+        public void MyParseMethod(string path)
+        {
+            ICharStream stream = CharStreams.fromPath(path); //random file for testing
             ITokenSource lexer = new DOTLexer(stream);
             ITokenStream tokens = new CommonTokenStream(lexer);
             DOTParser parser = new DOTParser(tokens);
@@ -40,9 +46,8 @@ namespace PetriVisualisation
             printer.RuleMoved += CheckState;
             printer.Terminal += TerminalHandler;
             ParseTreeWalker.Default.Walk(printer, tree);
-            
         }
-        
+
         private void CheckState(object sender, MoveRuleEventArgs e)
         {
             _rule = e.Rule;
@@ -111,6 +116,7 @@ namespace PetriVisualisation
                 throw new Exception(message: "Graph has to be defined");
             switch (_rule)
             {
+                //TODO unused are to be implemented later, now working with simple graphs
                 case Rule.Graph:
                     GraphHandler(e.Contains);
                     break;
@@ -230,7 +236,7 @@ namespace PetriVisualisation
         {
             if (_edgePool.Count < 2)
             {
-                throw new Exception(message:"Edge needs at least  vertexes");
+                throw new Exception(message:"Edge needs at least 2 vertexes");
             }
             
             graph.edges.Last().headId = _edgePool[0];

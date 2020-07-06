@@ -53,7 +53,7 @@ namespace PetriVisualisation
 
     public class Subgraph : IGraph
     {
-        private string _id;
+        //private string _id;
         public string belonging;
     }
 

@@ -12,7 +12,7 @@ namespace PetriVisualisation
         {
             //! added here so i could debug parser, proper avalonia using later
             Loader blah = new Loader();
-            blah.MyParseMethod();
+            var graph = blah.LoadGraph("/home/richard/Downloads/petrinet18-02-2020_10-20-31.dot");
             //! ends
             
             AvaloniaXamlLoader.Load(this);
