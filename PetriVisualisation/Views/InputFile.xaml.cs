@@ -2,11 +2,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace PetriVisualisation.Views
+namespace Input.Views
 {
-    public class MainWindow : Window
+    public class InputFile : UserControl
     {
-        public MainWindow()
+        public InputFile()
         {
             InitializeComponent();
         }
@@ -15,6 +15,5 @@ namespace PetriVisualisation.Views
         {
             AvaloniaXamlLoader.Load(this);
         }
-        
     }
 }

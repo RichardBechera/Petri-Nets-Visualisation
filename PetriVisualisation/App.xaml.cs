@@ -12,9 +12,9 @@ namespace PetriVisualisation
         public override void Initialize()
         {
             //! added here so i could debug parser, proper avalonia using later
-            Loader blah = new Loader();
-            var graph = blah.LoadGraph("/home/richard/Downloads/petrinet18-02-2020_10-20-31.dot");
-            var topo = algos.getTopoOnScc(graph);
+            //Loader blah = new Loader();
+            //var graph = blah.LoadGraph("/home/richard/Downloads/petrinet18-02-2020_10-20-31.dot");
+            //var topo = algos.getTopoOnScc(graph);
             //! ends
             
             AvaloniaXamlLoader.Load(this);

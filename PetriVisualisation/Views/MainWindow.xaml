@@ -7,11 +7,24 @@
         x:Class="PetriVisualisation.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="PetriVisualisation">
-
+    
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
-
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
+    <Grid ColumnDefinitions="Auto, Auto, Auto" RowDefinitions="Auto,Auto,Auto"  Margin="4">
+        <TextBlock Text="Choose .dor file to visualize" Grid.Row="0" Grid.Column="1"/>
+        <Button Content="Browse" Grid.Row="1" Grid.Column="1" Command="{Binding BrowseFiles}"/>
+        <Border BorderThickness="2" BorderBrush="Black" 
+                Margin="0,10,10,0" Grid.Column="1"
+                Grid.Row="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Width="502" Height="402">
+        <Canvas 
+                Width="500" Height="400"
+                Name="Canvas"
+                Background="LightGray"/>
+        </Border>
+        <Button Content="OK" Command="{Binding Confirm}"/>
+    </Grid>
 </Window>

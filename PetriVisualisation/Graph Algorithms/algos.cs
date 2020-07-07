@@ -113,16 +113,6 @@ namespace PetriVisualisation.Graph_Algorithms
 
             c.incoming = res.Count > 0 ? res : null;
             c.outgoing = res2.Count > 0 ? res2 : null;
-            
-            // c.incoming = new List<Node>().AddRange(c.nodes
-            //     .Where(node => nodes
-            //         .Any(nd => nd.succs
-            //             .Any(n => n.Item1
-            //                 .Equals(node)))));
-            // c.outgoing = new List<Node>().AddRange(c.nodes
-            //     .Where(node => node.succs
-            //         .Any(nd => nodes
-            //             .Contains(nd.Item1))));
         }
 
         private static void componentDfs(string id, IReadOnlyDictionary<string, Pair<Node, bool>> visited, List<Node> components, List<Node> nodes)
