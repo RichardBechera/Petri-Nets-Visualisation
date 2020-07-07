@@ -9,21 +9,37 @@ namespace PetriVisualisation.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        
-
+        private string path = String.Empty;
         public async void BrowseFiles()
         {
-            string _path = await GetPath();
+            
+            Path = await GetPath();
+            using (var reader = System.IO.File.OpenText(Path))
+            {
+                 Preview = await reader.ReadToEndAsync();            
+            }
+        }
+
+        public async void Confirm()
+        {
+            
+            //Preview = await System.IO.File.ReadAllText(@"C:\Users\Public\TestFolder\WriteText.txt");
+            // var choose = new Window();
+            // var text = new TextBox();
+            // text.Text = path;
+            // choose.Content = text;
+            // choose.Show();
+
         }
         
-        public async Task<string> GetPath()
+        private async Task<string> GetPath()
         {
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.Filters.Add(new FileDialogFilter() { Name = "Text", Extensions =  { "dot" } });
-
-            string[] result = await dialog.ShowAsync(new Window());
-
-            return string.Join(" ", result);
+        
+            var result = await dialog.ShowAsync(new Window());
+        
+            return result != null ? string.Join(" ", result) : " ";
         }
     }
 }
