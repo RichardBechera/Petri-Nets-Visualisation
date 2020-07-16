@@ -24,7 +24,7 @@
                 Width="502" Height="402">
         <Canvas 
                 Width="500" Height="400"
-                Name="Canvas"
+                Name="Canvas1"
                 Background="LightGray"/>
         </Border>
         <Border BorderThickness="2" BorderBrush="Black" 
@@ -33,7 +33,10 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Bottom"
                         Width="302" Height="202">
-                <TextBox Text="{Binding Preview}"/>
+            <ScrollViewer>
+                <TextBlock Text="{Binding Preview}"/>
+            </ScrollViewer>
+            
                 </Border>
         <Button Content="OK" Command="{Binding Confirm}"/>
     </Grid>

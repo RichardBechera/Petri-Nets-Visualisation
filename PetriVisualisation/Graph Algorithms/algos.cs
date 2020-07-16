@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Transactions;
 using Antlr4.Runtime.Dfa;
 using Avalonia.Input;
 
@@ -8,13 +9,68 @@ namespace PetriVisualisation.Graph_Algorithms
 {
     public class algos
     {
+        public static List<StrongComponent> sortComponentTopology(List<StrongComponent> components) =>
+            components.OrderBy(c => c.depth).ToList();
+        
         public static List<StrongComponent> getTopoOnScc(PetriVisualisation.Graph graph)
         {
             var graphN = Transform.transformGraph(graph);
             var graphT = Transform.transformTransposeGraph(graph);
             return topoOnScc(strongComponents(graphN, graphT));
         }
-        
+
+        private static List<Node> predecessors(Node hero, List<Node> nodes) => nodes
+            .Where(node => node.succs
+                .Exists(nd => nd.Item1
+                    .Equals(hero)))
+            .ToList();
+
+        public static int heightOfNet(List<StrongComponent> components)
+        {
+            var sortedComponents = sortComponentTopology(components);
+            //TODO now without complex cycles, think of bigger sc
+            var height = 0;
+            var currentDepth = -1;
+            var currentHeight = 0;
+            foreach (var c in sortedComponents)
+            {
+                if (c.depth == currentDepth)
+                {
+                    currentHeight = c.nodes.Count > currentHeight ? c.nodes.Count : currentHeight;
+                    continue;
+                }
+
+                height += currentHeight;    //there is only one ending node
+                currentDepth = c.depth;
+                currentHeight = c.nodes.Count;
+            }
+
+            return height;
+        }
+
+        public static int widthOfNet(List<StrongComponent> components)
+        {
+            var sortedComponents = sortComponentTopology(components);
+            //TODO now without complex cycles, think of bigger sc
+            var width = 1;
+            var currentC = 0;
+            var currentW = 0;
+            foreach (var c in sortedComponents.Select(sc => sc.depth))
+            {
+                if (c != currentC)
+                {
+                    currentW = 0;
+                    currentC = c;
+                }
+
+                currentW++;
+                if (width < currentW)
+                    width = currentW;
+            }
+
+            return width;
+        }
+
         private static List<StrongComponent> strongComponents(Graph graph, Graph transposed)
         {
             var stack = new Stack<Node>();
@@ -45,19 +101,20 @@ namespace PetriVisualisation.Graph_Algorithms
             var stack = new Stack<StrongComponent>();
             components.ForEach(c => c.flag = false);
             var start = components.First(c => c.incoming == null);
-            topoOnPetriGraph(stack, start);
+            topoOnPetriGraph(stack, start, 0);
             return stack.ToList();
         }
 
 
-        private static void topoOnPetriGraph(Stack<StrongComponent> stack, StrongComponent component)
+        private static void topoOnPetriGraph(Stack<StrongComponent> stack, StrongComponent component, int depth)
         {
             component.flag = true;
+            component.depth = depth;
             if (component.outside != null)
                 foreach (var outside in component.outside)
                 {
-                    if (!outside.flag)
-                        topoOnPetriGraph(stack, outside);
+                    if (!outside.flag || outside.depth < depth + 1)
+                        topoOnPetriGraph(stack, outside, depth + 1);
                 }
                 
             stack.Push(component);
