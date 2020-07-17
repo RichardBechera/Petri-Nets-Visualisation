@@ -59,7 +59,7 @@ namespace PetriVisualisation
         public string belonging;
     }
 
-    public class Node : IGraph
+    public class DotNode : IGraph
     {
         private int port;
         public string belonging;
@@ -74,10 +74,10 @@ namespace PetriVisualisation
         public GraphType _type { get; set; }
 
         //not needed, succs only contain nodes
-        public List<Node> onlyNodes() => succs
-            .Where(graph => new Typecheck<IGraph, Node>(graph).CanConvert)
+        public List<DotNode> onlyNodes() => succs
+            .Where(graph => new Typecheck<IGraph, DotNode>(graph).CanConvert)
                 .ToList()
-                .ConvertAll(node => (Node) node);
+                .ConvertAll(node => (DotNode) node);
         
         //not needed, subgraphs only contain subgraphs
         public List<Subgraph> onlySubgraphs() => subgraphs

@@ -59,7 +59,7 @@ namespace PetriVisualisation.Graph_Algorithms
         private static Node findNode(string node, List<Node> nodes) => nodes
             .Find(x => x.attr.id.Equals(node));
 
-        private static List<Node> newNodes(List<PetriVisualisation.Node> nodes) => nodes
+        private static List<Node> newNodes(List<PetriVisualisation.DotNode> nodes) => nodes
             .ConvertAll(node => new Node()
             {
                 attr = new Attributes(node.id, node.belonging, node.GraphAttr, node.NodeAttr, node.EdgeAttr)

@@ -85,7 +85,7 @@ namespace PetriVisualisation
                     graph.subgraphs.Add(workingBranch.Peek());
                     break;
                 case Rule.Node:
-                    var node = new Node();
+                    var node = new DotNode();
                     node.belonging = workingBranch.Peek().id;
                     workingBranch.Push(node);
                     graph.succs.Add(workingBranch.Peek());
