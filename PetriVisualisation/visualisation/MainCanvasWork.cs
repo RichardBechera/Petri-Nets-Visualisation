@@ -68,7 +68,8 @@ namespace PetriVisualisation.visualisation
             line.StartPoint = new Point(tail.Item1, tail.Item2);
             line.EndPoint = new Point(head.Item1, head.Item2);
             line.Stroke = Brushes.Black;
-
+            
+            //make arrows less retared
             var unitVector = (tail.Item1 - head.Item1, tail.Item2 - head.Item2);
             var unitVectorMagnitude = Math.Floor(Math.Sqrt(Math.Pow(unitVector.Item1, 2) + Math.Pow(unitVector.Item2, 2)));
             unitVector = ((int)Math.Floor(unitVector.Item1/unitVectorMagnitude) * 5, (int)Math.Floor(unitVector.Item2/unitVectorMagnitude) * 5);
