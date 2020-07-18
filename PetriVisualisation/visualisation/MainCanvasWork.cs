@@ -5,25 +5,28 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using DynamicData;
 using PetriVisualisation.Graph_Algorithms;
+using Transform = PetriVisualisation.Graph_Algorithms.Transform;
 
 namespace PetriVisualisation.visualisation
 {
     public class MainCanvasWork
     {
+        private Graph_Algorithms.Graph _graph;
 
         public void VisualiseGraph(Window window, string path)
         {
             Loader loader = new Loader();
             var graph = loader.LoadGraph(path);
-            var topo = algos.getTopoOnScc(graph);
+            _graph = Transform.transformGraph(graph);
+            var topo = algos.getTopoOnScc(graph, _graph);
             var canvas = new Canvas();
             canvas.Background = Brushes.White;
             canvas.Width = algos.widthOfNet(topo) * 85 + 150;
             canvas.Height = algos.heightOfNet(topo) * 70 + 35;    //TODO this seem like a little bit too much
-            var shapes = traverseComponents(topo, 35, (int)canvas.Width / 2);
+            var shapes = TraverseComponents(topo, 35, (int)canvas.Width / 2);
             var arrows = AddEdges(shapes.nodes, shapes.edges);
+            //!disgusting
             foreach (var node in shapes.nodes)
             {
                 canvas.Children.Add(node.shape);
@@ -64,27 +67,30 @@ namespace PetriVisualisation.visualisation
 
         private (Line line, Polygon tip) CreateLine(Tuple<int, int> head, Tuple<int, int> tail)
         {
-            var line = new Line();
-            line.StartPoint = new Point(tail.Item1, tail.Item2);
-            line.EndPoint = new Point(head.Item1, head.Item2);
-            line.Stroke = Brushes.Black;
-            
-            //make arrows less retared
+            var line = new Line
+            {
+                StartPoint = new Point(tail.Item1, tail.Item2),
+                EndPoint = new Point(head.Item1, head.Item2),
+                Stroke = Brushes.Black
+            };
+
+            //make arrows less retarded
             var unitVector = (tail.Item1 - head.Item1, tail.Item2 - head.Item2);
             var unitVectorMagnitude = Math.Floor(Math.Sqrt(Math.Pow(unitVector.Item1, 2) + Math.Pow(unitVector.Item2, 2)));
             unitVector = ((int)Math.Floor(unitVector.Item1/unitVectorMagnitude) * 5, (int)Math.Floor(unitVector.Item2/unitVectorMagnitude) * 5);
             var middlePoint = (head.Item1 + unitVector.Item1, head.Item2 + unitVector.Item2);
             var leftPoint = new Point(middlePoint.Item1 + unitVector.Item2, middlePoint.Item2 - unitVector.Item1 );
             var rightPoint = new Point(middlePoint.Item1 - unitVector.Item2, middlePoint.Item2 + unitVector.Item1 );
-            
-            var tip = new Polygon();
-            tip.Points = new List<Point> {line.EndPoint, leftPoint, rightPoint};
-            tip.Fill = Brushes.Black;
+
+            var tip = new Polygon
+            {
+                Points = new List<Point> {line.EndPoint, leftPoint, rightPoint}, Fill = Brushes.Black
+            };
             return (line, tip);
         }
 
         private (List<CanvasNode<Ellipse>> nodes, List<CanvasNode<Rectangle>> edges) 
-            traverseComponents(List<StrongComponent> components, int top, int left)
+            TraverseComponents(List<StrongComponent> components, int top, int left)
         {
             if (components.Count < 1)
                 return (null, null);
@@ -97,34 +103,39 @@ namespace PetriVisualisation.visualisation
             {
                 if (current != c.depth)
                 {
-                    traverseBag(bag, edges, nodes, ref top, ref left);
+                    TraverseBag(bag, edges, nodes, ref top, ref left);
                     current = c.depth;
                     bag.Clear();
                 }
                 bag.Add(c);
             }
-            traverseBag(bag, edges, nodes, ref top, ref left);
+            TraverseBag(bag, edges, nodes, ref top, ref left);
             return (nodes, edges);
         }
 
-        private void traverseBag(List<StrongComponent> bag, List<CanvasNode<Rectangle>> edges,
+        private void TraverseBag(List<StrongComponent> bag, List<CanvasNode<Rectangle>> edges,
             List<CanvasNode<Ellipse>> nodes, ref int top, ref int left)
         {
             var leftOffset = (left * 2) / (bag.Count+1);
             var leftPosition = leftOffset;
+            var height = 1;
             //var topOffset
             //TODO for more thn 1 node in strong component
-            foreach (var node in from sc in bag where sc.nodes.Count == 1 select sc.nodes.First())
+            foreach (var node in bag)//(var node in from sc in bag where sc.nodes.Count == 1 select sc.nodes.First()) from time whn i assumed scc to have 1 node
             {
-                switch (node.attr.belonging)
+                
+                var fromSub = string.Empty;
+                _graph.subgraphs.Find(sub => sub.id == node.attr.belonging)?
+                    .NodeAttr.TryGetValue("shape", out fromSub);    //TODO apply all attributes ? (graph => (sub)^+graph => node
+                switch (fromSub)
                 {
-                    case "transitions":
+                    case "rect":
                         edges.Add(createRectangle(node.attr.id, top, leftPosition, node));
                         break;
-                    case "place":
+                    case "circle":
                         nodes.Add(createEllipse(node.attr.id, top, leftPosition, node));
                         break;
-                    //TODO Any other subgraphs ?
+                    //TODO Any other shapes ?
                 }
 
                 leftPosition += leftOffset;

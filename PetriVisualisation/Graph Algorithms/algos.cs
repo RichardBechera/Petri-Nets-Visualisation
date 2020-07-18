@@ -12,11 +12,11 @@ namespace PetriVisualisation.Graph_Algorithms
         public static List<StrongComponent> sortComponentTopology(List<StrongComponent> components) =>
             components.OrderBy(c => c.depth).ToList();
         
-        public static List<StrongComponent> getTopoOnScc(PetriVisualisation.Graph graph)
+        public static List<StrongComponent> getTopoOnScc(PetriVisualisation.Graph graph, Graph graph_n = null)
         {
-            var graphN = Transform.transformGraph(graph);
+            var graphN = graph_n ?? Transform.transformGraph(graph);
             var graphT = Transform.transformTransposeGraph(graph);
-            return topoOnScc(strongComponents(graphN, graphT));
+            return topoOnScc(StrongComponents(graphN, graphT));
         }
 
         private static List<Node> predecessors(Node hero, List<Node> nodes) => nodes
@@ -71,7 +71,78 @@ namespace PetriVisualisation.Graph_Algorithms
             return width;
         }
 
-        private static List<StrongComponent> strongComponents(Graph graph, Graph transposed)
+        public List<Tuple<Node, int, int>> SccOrdering(StrongComponent component)
+        {
+            if (component.nodes.Count <= 1)
+                return component.nodes.Select(nd => new Tuple<Node, int, int>(nd, 0, 1)).ToList();
+            var ordering = SccBfsOrdering(component);
+            var s = ordering.First().Item2;
+            var t = ordering
+                .Aggregate(ordering.First().Item2, (res, cur) => res > cur.Item2 ? res : cur.Item2);
+            var left = ordering.Skip(1).TakeWhile(a => a.Item2 < t).ToList();
+            var right = ordering.SkipWhile(a => a.Item2 <= t).ToList();
+            var addition = 0;
+            if (right.Last().Item2 < 1)
+                addition = -right.Last().Item2 + 1;
+
+            return right
+                .Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2 + addition, 2))
+                .Concat(left.Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 0)))
+                .Append(ordering.Take(1).Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 1)).First())
+                .Append(ordering.SkipWhile(a => a.Item2 < t).Take(1)
+                    .Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 1)).First())
+                .OrderBy(a => a.Item1).ToList();
+        }
+
+        private static List<Tuple<Node, int>> SccBfsOrdering(StrongComponent component)
+        {
+            //! only 1 outgoing, only 1 ingoing
+            //! in general extremely bad approach causing many bugs => t doesnt have to be the only node on its layer found by bfs
+            
+            var s = component.incoming.Count == 0 ? component.nodes.First() : component.incoming.First(); //!assuming they are already sorted (p0 < p1 < p2 < ...), and well, assuming there is only 1
+            var t = component.outgoing.Count == 0 ? component.nodes.Last() : component.outgoing.Last();
+            var visited = component.nodes.ToDictionary(c => c, v => false);
+            visited[s] = true;
+            var order = new List<Tuple<Node, int>> {new Tuple<Node, int>(s, 0)};
+            var queue = new Queue<Tuple<Node, int>>();
+            queue.Enqueue(new Tuple<Node, int>(s, 0));
+            while (queue.Count > 0)
+            {
+                var (node, ord) = queue.Dequeue();
+                if (component.outgoing.Contains(node))
+                {
+                    visited[node] = true;
+                    order.Add(new Tuple<Node, int>(node, ord+1));
+                    continue;
+                }
+
+                foreach (var succ in node.succs
+                    .Where(nd => component.nodes.Contains(nd.Item1))
+                    .Select(tup => tup.Item1).Where(nd=> !visited[nd]))
+                {
+                    order.Add(new Tuple<Node, int>(succ, ord+1));
+                    queue.Enqueue(order.Last());
+                    visited[succ] = true;
+                }
+            }
+            queue.Enqueue(order.Find(o => o.Item1.Equals(t)));
+            while (queue.Count > 0)
+            {
+                var (node, ord) = queue.Dequeue();
+                foreach (var succ in node.succs
+                    .Where(nd => component.nodes.Contains(nd.Item1))
+                    .Select(tup => tup.Item1).Where(nd=> !visited[nd]))
+                {
+                    order.Add(new Tuple<Node, int>(succ, ord-1));
+                    queue.Enqueue(order.Last());
+                    visited[succ] = true;
+                }
+            }
+
+            return order;
+        }
+
+        private static List<StrongComponent> StrongComponents(Graph graph, Graph transposed)
         {
             var stack = new Stack<Node>();
             var visited = graph.nodes
@@ -111,10 +182,10 @@ namespace PetriVisualisation.Graph_Algorithms
             component.flag = true;
             component.depth = depth;
             if (component.outside != null)
-                foreach (var outside in component.outside)
+                foreach (var outside in component.outside
+                    .Where(outside => !outside.flag || outside.depth < depth + 1))
                 {
-                    if (!outside.flag || outside.depth < depth + 1)
-                        topoOnPetriGraph(stack, outside, depth + 1);
+                    topoOnPetriGraph(stack, outside, depth + 1);
                 }
                 
             stack.Push(component);
@@ -128,23 +199,25 @@ namespace PetriVisualisation.Graph_Algorithms
             {
                 if (c.incoming != null)
                 {
-                    var res = new List<StrongComponent>();
-                    foreach (var c1 in components.Where(c1 => !c1.Equals(c) && c1.outgoing != null).Where(c1 => c1.nodes.Exists(node => node.succs
-                        .Exists(nd => nd.Item1.Equals(c.incoming)))))
-                    {
-                        res.Add(c1);
-                    }
+                    var res = components
+                        .Where(c1 => !c1.Equals(c) && c1.outgoing != null)
+                        .Where(c1 => c1.nodes
+                            .Exists(node => node.succs
+                                .Exists(nd => c.incoming.Any(cc => nd.Item1.Equals(cc)))))
+                        .ToList();
 
                     c.inside = res.Count > 0 ? res : null;
                 }
-               
-                var res2 = new List<StrongComponent>();
+
                 if (c.outgoing == null) continue;
                 {
-                    foreach (var c2 in components.Where(c2 => !c2.Equals(c) && c2.incoming != null).Where(c2 => c2.nodes.Exists(node => c.outgoing.Any(k => k.succs.Exists(nd => nd.Item1.Equals(node))))))
-                    {
-                        res2.Add(c2);
-                    }
+                    var res2 = components
+                        .Where(c2 => !c2.Equals(c) && c2.incoming != null)
+                        .Where(c2 => c2.nodes
+                            .Exists(node => c.outgoing
+                                .Any(k => k.succs
+                                    .Exists(nd => nd.Item1.Equals(node)))))
+                        .ToList();
 
                     c.outside = res2.Count > 0 ? res2 : null;
                 }

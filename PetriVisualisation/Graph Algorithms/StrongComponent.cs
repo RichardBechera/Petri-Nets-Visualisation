@@ -5,8 +5,8 @@ namespace PetriVisualisation.Graph_Algorithms
     public class StrongComponent
     {
         public List<Node> nodes = new List<Node>();
-        public List<Node> outgoing;    //lets pretend thats only one edge goes into cycle and out of cycle
-        public List<Node> incoming; //! this is more crucial, lets make it List<Node> later
+        public List<Node> outgoing;    //lets pretend there is only one edge goes into cycle and out of cycle
+        public List<Node> incoming; 
         public List<StrongComponent> outside;
         public List<StrongComponent> inside;
         public int depth = 0;
