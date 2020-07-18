@@ -71,7 +71,7 @@ namespace PetriVisualisation.Graph_Algorithms
             return width;
         }
 
-        public List<Tuple<Node, int, int>> SccOrdering(StrongComponent component)
+        public static List<Tuple<Node, int, int>> SccOrdering(StrongComponent component)
         {
             if (component.nodes.Count <= 1)
                 return component.nodes.Select(nd => new Tuple<Node, int, int>(nd, 0, 1)).ToList();
@@ -80,18 +80,18 @@ namespace PetriVisualisation.Graph_Algorithms
             var t = ordering
                 .Aggregate(ordering.First().Item2, (res, cur) => res > cur.Item2 ? res : cur.Item2);
             var left = ordering.Skip(1).TakeWhile(a => a.Item2 < t).ToList();
-            var right = ordering.SkipWhile(a => a.Item2 <= t).ToList();
+            var right = ordering.SkipWhile(a => a.Item2 < t).Skip(1).ToList();
             var addition = 0;
-            if (right.Last().Item2 < 1)
+            if (right.Count < 0 || right.Last().Item2 < 1)
                 addition = -right.Last().Item2 + 1;
 
-            return right
+            var first =  right
                 .Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2 + addition, 2))
-                .Concat(left.Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 0)))
-                .Append(ordering.Take(1).Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 1)).First())
-                .Append(ordering.SkipWhile(a => a.Item2 < t).Take(1)
-                    .Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 1)).First())
-                .OrderBy(a => a.Item1).ToList();
+                .Concat(left.Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, right.Count > 0 ? 0 : 1)));
+            var second = first.Append(ordering.Take(1).Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 1)).First());
+            var third = second.Append(ordering.SkipWhile(a => a.Item2 < t).Take(1)
+                    .Select(a => new Tuple<Node, int, int>(a.Item1, a.Item2, 1)).First());
+            return third.OrderBy(a => a.Item2).ToList();
         }
 
         private static List<Tuple<Node, int>> SccBfsOrdering(StrongComponent component)
@@ -111,8 +111,6 @@ namespace PetriVisualisation.Graph_Algorithms
                 var (node, ord) = queue.Dequeue();
                 if (component.outgoing.Contains(node))
                 {
-                    visited[node] = true;
-                    order.Add(new Tuple<Node, int>(node, ord+1));
                     continue;
                 }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -118,31 +119,72 @@ namespace PetriVisualisation.visualisation
         {
             var leftOffset = (left * 2) / (bag.Count+1);
             var leftPosition = leftOffset;
-            var height = 1;
+            var height = 0;
             //var topOffset
             //TODO for more thn 1 node in strong component
             foreach (var node in bag)//(var node in from sc in bag where sc.nodes.Count == 1 select sc.nodes.First()) from time whn i assumed scc to have 1 node
             {
-                
-                var fromSub = string.Empty;
-                _graph.subgraphs.Find(sub => sub.id == node.attr.belonging)?
-                    .NodeAttr.TryGetValue("shape", out fromSub);    //TODO apply all attributes ? (graph => (sub)^+graph => node
-                switch (fromSub)
+                var orderedC = algos.SccOrdering(node);
+                if (orderedC.Last().Item2 > height)
+                    height = orderedC.Last().Item2;
+                if (orderedC.Count == 1)
                 {
-                    case "rect":
-                        edges.Add(createRectangle(node.attr.id, top, leftPosition, node));
-                        break;
-                    case "circle":
-                        nodes.Add(createEllipse(node.attr.id, top, leftPosition, node));
-                        break;
-                    //TODO Any other shapes ?
+                    var nodeW = orderedC.First().Item1;
+                    var fromSub = string.Empty;
+                    _graph.subgraphs.Find(sub => sub.id == nodeW.attr.belonging)?
+                        .NodeAttr
+                        .TryGetValue("shape", out fromSub); //TODO apply all attributes ? (graph => (sub)^+graph => node
+                    switch (fromSub)
+                    {
+                        case "rect":
+                            edges.Add(createRectangle(nodeW.attr.id, top, leftPosition, nodeW));
+                            break;
+                        case "circle":
+                            nodes.Add(createEllipse(nodeW.attr.id, top, leftPosition, nodeW));
+                            break;
+                        //TODO Any other shapes ?
+                    }
                 }
-
+                else
+                {
+                    VisualiseBigComponent(orderedC, edges, nodes, top, leftPosition, leftOffset);
+                }
                 leftPosition += leftOffset;
             }
             //moved top down, as low as heighest component
-            top += bag.Aggregate(1, (i, component) => i < component.nodes.Count ? component.nodes.Count : i) * 60;
+            top += (height + 1) * 60;
         }
+
+        private void VisualiseBigComponent(List<Tuple<Node, int, int>> order, List<CanvasNode<Rectangle>> edges,
+            List<CanvasNode<Ellipse>> nodes, int top, int middle, int widthOfA)
+        {
+            var left = middle - widthOfA / 4;
+            var right = middle + widthOfA / 4;
+            foreach (var (node, ord, s) in order)
+            {
+                var leftPosition = s switch
+                {
+                    0 => left,
+                    1 => middle,
+                    _ => right
+                };
+                var topPosition = top + ord * 60; 
+                var fromSub = string.Empty;
+                _graph.subgraphs.Find(sub => sub.id == node.attr.belonging)?
+                    .NodeAttr
+                    .TryGetValue("shape", out fromSub); //TODO apply all attributes ? (graph => (sub)^+graph => node; as above
+                switch (fromSub)
+                {
+                    case "rect":
+                        edges.Add(createRectangle(node.attr.id, topPosition, leftPosition, node));
+                        break;
+                    case "circle":
+                        nodes.Add(createEllipse(node.attr.id, topPosition, leftPosition, node));
+                        break;
+                    //TODO Any other shapes ?
+                }
+            }
+        } 
 
         private CanvasNode<Ellipse> createEllipse(string name, int top, int left, Node node)
         {
