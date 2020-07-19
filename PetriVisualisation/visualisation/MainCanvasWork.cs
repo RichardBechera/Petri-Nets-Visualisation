@@ -49,37 +49,39 @@ namespace PetriVisualisation.visualisation
             window.Content = canvas;
         }
 
-        private List<(Line, Polygon)> AddEdges(List<CanvasNode<Ellipse>> nodes, List<CanvasNode<Rectangle>> edges)
+        private List<(Line, Polygon)> AddEdges(List<CanvasNode> nodes, List<CanvasNode> edges)
         {
             var arrows = (from node in nodes 
                 from succ 
                     in node.node.succs 
                 select CreateLine(edges
-                    .Find(e => e.node.attr.id == succ.Item1.attr.id)?.portIn, node.portOut))
+                    .Find(e => e.node.attr.id == succ.Item1.attr.id), node))
                 .ToList();
             arrows.AddRange(from edge in edges 
                 from succ 
                     in edge.node.succs 
                 select CreateLine(nodes
-                    .Find(e => e.node.attr.id == succ.Item1.attr.id)?.portIn, edge.portOut));
+                    .Find(e => e.node.attr.id == succ.Item1.attr.id), edge));
 
             return arrows;
         }
 
-        private (Line line, Polygon tip) CreateLine(Tuple<int, int> head, Tuple<int, int> tail)
+        private (Line line, Polygon tip) CreateLine(CanvasNode toNode, CanvasNode fromNode)
         {
+            var head = toNode.getInPort(fromNode);
+            var tail = fromNode.getOutPort(toNode);
             var line = new Line
             {
-                StartPoint = new Point(tail.Item1, tail.Item2),
-                EndPoint = new Point(head.Item1, head.Item2),
+                StartPoint = tail,
+                EndPoint = head,
                 Stroke = Brushes.Black
             };
 
             //make arrows less retarded
-            var unitVector = (tail.Item1 - head.Item1, tail.Item2 - head.Item2);
+            var unitVector = (tail.X - head.X, tail.Y - head.Y);
             var unitVectorMagnitude = Math.Floor(Math.Sqrt(Math.Pow(unitVector.Item1, 2) + Math.Pow(unitVector.Item2, 2)));
             unitVector = ((int)Math.Floor(unitVector.Item1/unitVectorMagnitude) * 5, (int)Math.Floor(unitVector.Item2/unitVectorMagnitude) * 5);
-            var middlePoint = (head.Item1 + unitVector.Item1, head.Item2 + unitVector.Item2);
+            var middlePoint = (head.X + unitVector.Item1, head.Y + unitVector.Item2);
             var leftPoint = new Point(middlePoint.Item1 + unitVector.Item2, middlePoint.Item2 - unitVector.Item1 );
             var rightPoint = new Point(middlePoint.Item1 - unitVector.Item2, middlePoint.Item2 + unitVector.Item1 );
 
@@ -90,13 +92,13 @@ namespace PetriVisualisation.visualisation
             return (line, tip);
         }
 
-        private (List<CanvasNode<Ellipse>> nodes, List<CanvasNode<Rectangle>> edges) 
+        private (List<CanvasNode> nodes, List<CanvasNode> edges) 
             TraverseComponents(List<StrongComponent> components, int top, int left)
         {
             if (components.Count < 1)
                 return (null, null);
-            var edges = new List<CanvasNode<Rectangle>>();
-            var nodes = new List<CanvasNode<Ellipse>>();
+            var edges = new List<CanvasNode>();
+            var nodes = new List<CanvasNode>();
             components = algos.sortComponentTopology(components);
             var bag = new List<StrongComponent>();
             var current = 0;
@@ -114,8 +116,8 @@ namespace PetriVisualisation.visualisation
             return (nodes, edges);
         }
 
-        private void TraverseBag(List<StrongComponent> bag, List<CanvasNode<Rectangle>> edges,
-            List<CanvasNode<Ellipse>> nodes, ref int top, ref int left)
+        private void TraverseBag(List<StrongComponent> bag, List<CanvasNode> edges,
+            List<CanvasNode> nodes, ref int top, ref int left)
         {
             var leftOffset = (left * 2) / (bag.Count+1);
             var leftPosition = leftOffset;
@@ -155,8 +157,8 @@ namespace PetriVisualisation.visualisation
             top += (height + 1) * 60;
         }
 
-        private void VisualiseBigComponent(List<Tuple<Node, int, int>> order, List<CanvasNode<Rectangle>> edges,
-            List<CanvasNode<Ellipse>> nodes, int top, int middle, int widthOfA)
+        private void VisualiseBigComponent(List<Tuple<Node, int, int>> order, List<CanvasNode> edges,
+            List<CanvasNode> nodes, int top, int middle, int widthOfA)
         {
             var left = middle - widthOfA / 4;
             var right = middle + widthOfA / 4;
@@ -186,7 +188,7 @@ namespace PetriVisualisation.visualisation
             }
         } 
 
-        private CanvasNode<Ellipse> createEllipse(string name, int top, int left, Node node)
+        private CanvasNode createEllipse(string name, int top, int left, Node node)
         {
             var circle =  new Ellipse()
             {
@@ -210,10 +212,10 @@ namespace PetriVisualisation.visualisation
             Canvas.SetTop(text, top-10);
             Canvas.SetLeft(text, left-20);
             text.ZIndex = circle.ZIndex + 1;
-            return new CanvasNode<Ellipse>(circle, text, 50, 50, left, top, node);
+            return new CanvasNode(circle, NodeType.Ellipse, text, 50, 50, left, top, node);
         }
 
-        private CanvasNode<Rectangle> createRectangle(string name, int top, int left, Node node)
+        private CanvasNode createRectangle(string name, int top, int left, Node node)
         {
             var rectangle =  new Rectangle()
             {
@@ -237,7 +239,7 @@ namespace PetriVisualisation.visualisation
             Canvas.SetTop(rectangle, top-15);
             Canvas.SetLeft(rectangle, left-25);
             text.ZIndex = rectangle.ZIndex + 1;
-            return new CanvasNode<Rectangle>(rectangle, text, 50, 30, left, top, node);
+            return new CanvasNode(rectangle, NodeType.Rectangle, text, 50, 30, left, top, node);
         }
     }
 }
