@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PetriVisualisation.LoadInnerLogic;
 
 namespace PetriVisualisation.Graph_Algorithms
 {
     public class Transform
     {
-        public static Graph transformGraph(PetriVisualisation.Graph graph) => CreateGraph(graph);
+        public static Graph transformGraph(LoadInnerLogic.Graph graph) => CreateGraph(graph);
 
-        public static Graph transformTransposeGraph(PetriVisualisation.Graph graph) => CreateGraph(graph, true);
+        public static Graph transformTransposeGraph(LoadInnerLogic.Graph graph) => CreateGraph(graph, true);
 
-        private static Graph CreateGraph(PetriVisualisation.Graph graph, bool transpose = false)
+        private static Graph CreateGraph(LoadInnerLogic.Graph graph, bool transpose = false)
         {
-            var newGraph = new Graph(graph._type,
-                new Attributes(graph.id, graph.id, graph.GraphAttr, graph.NodeAttr, graph.EdgeAttr), graph._strict)
+            var newGraph = new Graph(graph.Type,
+                new Attributes(graph.id, graph.id, graph.GraphAttr, graph.NodeAttr, graph.EdgeAttr), graph.strict)
             {
                 subgraphs = transformSubgraphs(graph), nodes = transformNodes(graph, transpose)
             };
@@ -21,7 +22,7 @@ namespace PetriVisualisation.Graph_Algorithms
             return newGraph;
         }
 
-        private static List<Attributes> transformSubgraphs(PetriVisualisation.Graph graph)
+        private static List<Attributes> transformSubgraphs(LoadInnerLogic.Graph graph)
         {
             return graph.onlySubgraphs().ConvertAll(sub => new Attributes()
             {
@@ -33,13 +34,13 @@ namespace PetriVisualisation.Graph_Algorithms
             });
         }
 
-        private static List<Node> transformNodes(PetriVisualisation.Graph graph, bool transpose)
+        private static List<Node> transformNodes(LoadInnerLogic.Graph graph, bool transpose)
         {
             var nodes = newNodes(graph.onlyNodes()); //graph succs ?
             var edges = !transpose ? graph.edges : transposeEdges(graph.edges);
             nodes.ForEach(node => node.succs = outgoingEdges(node.attr.id, edges)
                     .ConvertAll(edge => 
-                        new Tuple<Node, Dictionary<string, string>>(findNode(edge.tailId, nodes), edge.EdgeAttr)));
+                        new System.Tuple<Node, Dictionary<string, string>>(findNode(edge.tailId, nodes), edge.edgeAttr)));
             return nodes;
         }
 
@@ -48,7 +49,7 @@ namespace PetriVisualisation.Graph_Algorithms
             {
                 headId = edge.tailId,
                 tailId = edge.headId,
-                EdgeAttr = edge.EdgeAttr
+                edgeAttr = edge.edgeAttr
             });
         
 
@@ -59,7 +60,7 @@ namespace PetriVisualisation.Graph_Algorithms
         private static Node findNode(string node, List<Node> nodes) => nodes
             .Find(x => x.attr.id.Equals(node));
 
-        private static List<Node> newNodes(List<PetriVisualisation.DotNode> nodes) => nodes
+        private static List<Node> newNodes(List<DotNode> nodes) => nodes
             .ConvertAll(node => new Node()
             {
                 attr = new Attributes(node.id, node.belonging, node.GraphAttr, node.NodeAttr, node.EdgeAttr)

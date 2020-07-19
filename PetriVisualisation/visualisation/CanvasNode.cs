@@ -16,13 +16,13 @@ namespace PetriVisualisation.visualisation
         public TextBlock textBlock;
         public int width;
         public int height;
-        public Tuple<int, int> middle;    //So i know width and height of node
+        public System.Tuple<int, int> middle;    //So i know width and height of node
         //! ports could be of type Avalonia.Point
-        private List<Point> portsSide;    //Later for edges more complex edges
+        private List<Point> _portsSide;    //Later for edges more complex edges
         //We usually enter the graph from top port and leave from the bottom port
-        public Point portOut;    
-        public Point portIn;
-        public Node node;
+        private Point _portOut;
+        private Point _portIn;
+        public readonly Node node;
 
         public CanvasNode(Shape shape, NodeType nodeType, TextBlock textBlock, int width, int height, int x, int y, Node node)
         {
@@ -31,21 +31,21 @@ namespace PetriVisualisation.visualisation
             this.textBlock = textBlock;
             this.width = width;
             this.height = height;
-            middle = new Tuple<int, int>(x, y);
+            middle = new System.Tuple<int, int>(x, y);
             this.node = node;
-            createPorts(x, y);
+            CreatePorts(x, y);
         }
 
         // LT -> RT -> LB -> RB
-        private void createPorts(int x, int y)
+        private void CreatePorts(int x, int y)
         {
-            portIn = new Point(x, y-height/2);
-            portOut = new Point(x, y+height/2);
+            _portIn = new Point(x, y-height/2);
+            _portOut = new Point(x, y+height/2);
             
             if (type == NodeType.Rectangle)
             {
                 
-                portsSide = new List<Point>()
+                _portsSide = new List<Point>()
                 {
                     new Point(middle.Item1 - width/2, middle.Item2 - height/2),
                     new Point(middle.Item1 + width/2, middle.Item2 - height/2),
@@ -55,7 +55,7 @@ namespace PetriVisualisation.visualisation
             }
             else if (type == NodeType.Ellipse)
             {
-                portsSide = new List<Point>()
+                _portsSide = new List<Point>()
                 {
                     
                     new Point(middle.Item1 + (width/2)*Math.Cos(3.92699), middle.Item2 + (width/2)*Math.Sin(3.92699)),
@@ -67,21 +67,21 @@ namespace PetriVisualisation.visualisation
             //TODO mora shapes later
         }
 
-        public Point getOutPort(CanvasNode getter)
+        public Point GetOutPort(CanvasNode getter)
         {
             if (getter.middle.Item2 > middle.Item2 && getter.middle.Item1 == middle.Item1)
-                return portOut;
+                return _portOut;
 
             if (getter.middle.Item1 > middle.Item1)
-                return getter.middle.Item2 > middle.Item2 ? portsSide[3] : portsSide[1];
-            return getter.middle.Item2 > middle.Item2 ? portsSide[2] : portsSide[0];
+                return getter.middle.Item2 > middle.Item2 ? _portsSide[3] : _portsSide[1];
+            return getter.middle.Item2 > middle.Item2 ? _portsSide[2] : _portsSide[0];
         }
         
-        public Point getInPort(CanvasNode getter)
+        public Point GetInPort(CanvasNode getter)
         {
             if (getter.middle.Item2 < middle.Item2 && getter.middle.Item1 == middle.Item1)
-                return portIn;
-            return getOutPort(getter);
+                return _portIn;
+            return GetOutPort(getter);
         }
     }
 }

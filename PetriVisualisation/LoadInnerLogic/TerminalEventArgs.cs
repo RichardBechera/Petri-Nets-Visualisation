@@ -1,6 +1,6 @@
 using System;
 
-namespace PetriVisualisation
+namespace PetriVisualisation.LoadInnerLogic
 {
     public class TerminalEventArgs : EventArgs
     {

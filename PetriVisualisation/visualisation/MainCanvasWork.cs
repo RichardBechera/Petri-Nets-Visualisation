@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using PetriVisualisation.Graph_Algorithms;
+using PetriVisualisation.LoadInnerLogic;
 using Transform = PetriVisualisation.Graph_Algorithms.Transform;
 
 namespace PetriVisualisation.visualisation
@@ -14,17 +16,19 @@ namespace PetriVisualisation.visualisation
     public class MainCanvasWork
     {
         private Graph_Algorithms.Graph _graph;
-
-        public void VisualiseGraph(Window window, string path)
+        public async Task VisualiseGraph(Window window, string path)
         {
-            Loader loader = new Loader();
-            var graph = loader.LoadGraph(path);
+            var loader = new Loader();
+            var graph = await loader.LoadGraphAsync(path);
             _graph = Transform.transformGraph(graph);
             var topo = algos.getTopoOnScc(graph, _graph);
-            var canvas = new Canvas();
-            canvas.Background = Brushes.White;
-            canvas.Width = algos.widthOfNet(topo) * 85 + 150;
-            canvas.Height = algos.heightOfNet(topo) * 70 + 35;    //TODO this seem like a little bit too much
+            var canvas = new Canvas
+            {
+                Background = Brushes.White,
+                Width = algos.WidthOfNet(topo) * 85 + 150,
+                Height = algos.HeightOfNet(topo) * 70 + 35
+            };
+            //TODO this seem like a little bit too much
             var shapes = TraverseComponents(topo, 35, (int)canvas.Width / 2);
             var arrows = AddEdges(shapes);
             foreach (var node in shapes)
@@ -37,10 +41,14 @@ namespace PetriVisualisation.visualisation
                 canvas.Children.Add(line);
                 canvas.Children.Add(tip);
             }
+            
+            var scroller = new ScrollViewer {Content = canvas};
+            scroller.Width = 400;
+            scroller.Height = 600;
 
             window.Background = Brushes.Black;
             window.Opacity = 0.8;
-            window.Content = canvas;
+            window.Content = scroller;
         }
 
         private List<(Line, Polygon)> AddEdges(List<CanvasNode> nodes)
@@ -57,8 +65,8 @@ namespace PetriVisualisation.visualisation
 
         private (Line line, Polygon tip) CreateLine(CanvasNode toNode, CanvasNode fromNode)
         {
-            var head = toNode.getInPort(fromNode);
-            var tail = fromNode.getOutPort(toNode);
+            var head = toNode.GetInPort(fromNode);
+            var tail = fromNode.GetOutPort(toNode);
             var line = new Line
             {
                 StartPoint = tail,
@@ -86,7 +94,7 @@ namespace PetriVisualisation.visualisation
             if (components.Count < 1)
                 return null;
             var nodes = new List<CanvasNode>();
-            components = algos.sortComponentTopology(components);
+            components = algos.SortComponentTopology(components);
             var bag = new List<StrongComponent>();
             var current = 0;
             foreach (var c in components)

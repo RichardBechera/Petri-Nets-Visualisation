@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using PetriVisualisation.Graph_Algorithms;
 
-namespace PetriVisualisation
+namespace PetriVisualisation.LoadInnerLogic
 {
     
     //TODO Type enums merge into less enums, move into separate folders/files
@@ -55,23 +54,22 @@ namespace PetriVisualisation
 
     public class Subgraph : IGraph
     {
-        //private string _id;
         public string belonging;
     }
 
     public class DotNode : IGraph
     {
-        private int port;
+        private int port;    //unused
         public string belonging;
     }
     public class Graph : IGraph
     {
-        public bool _strict = false;
+        public bool strict = false;
         
-        public List<IGraph> subgraphs = new List<IGraph>();
+        public readonly List<IGraph> subgraphs = new List<IGraph>();
         
-        public List<Edge> edges = new List<Edge>();
-        public GraphType _type { get; set; }
+        public readonly List<Edge> edges = new List<Edge>();
+        public GraphType Type { get; set; }
 
         //not needed, succs only contain nodes
         public List<DotNode> onlyNodes() => succs
@@ -90,7 +88,7 @@ namespace PetriVisualisation
     {
         public string headId;
         public string tailId;
-        public Dictionary<string, string> EdgeAttr = new Dictionary<string, string>();
+        public Dictionary<string, string> edgeAttr = new Dictionary<string, string>();
     }
 
 

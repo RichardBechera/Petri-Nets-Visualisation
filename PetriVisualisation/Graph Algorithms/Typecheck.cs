@@ -1,5 +1,6 @@
 namespace PetriVisualisation.Graph_Algorithms
 {
+    //! delete later
     public class Typecheck<TFrom, TTo>
     {
         

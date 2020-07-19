@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PetriVisualisation.LoadInnerLogic;
 
 namespace PetriVisualisation.Graph_Algorithms
 {
@@ -55,7 +56,7 @@ namespace PetriVisualisation.Graph_Algorithms
     {
         public Attributes attr = new Attributes();
         public string port; //unused
-        public List<Tuple<Node, Dictionary<string, string>>> succs = new List<Tuple<Node, Dictionary<string, string>>>();
+        public List<System.Tuple<Node, Dictionary<string, string>>> succs = new List<System.Tuple<Node, Dictionary<string, string>>>();
     }
     
 }

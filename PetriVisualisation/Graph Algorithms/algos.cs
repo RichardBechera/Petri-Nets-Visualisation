@@ -9,25 +9,25 @@ namespace PetriVisualisation.Graph_Algorithms
 {
     public class algos
     {
-        public static List<StrongComponent> sortComponentTopology(List<StrongComponent> components) =>
+        public static List<StrongComponent> SortComponentTopology(List<StrongComponent> components) =>
             components.OrderBy(c => c.depth).ToList();
         
-        public static List<StrongComponent> getTopoOnScc(PetriVisualisation.Graph graph, Graph graph_n = null)
+        public static List<StrongComponent> getTopoOnScc(LoadInnerLogic.Graph graph, Graph graphN = null)
         {
-            var graphN = graph_n ?? Transform.transformGraph(graph);
+            graphN ??= Transform.transformGraph(graph);
             var graphT = Transform.transformTransposeGraph(graph);
             return topoOnScc(StrongComponents(graphN, graphT));
         }
 
-        private static List<Node> predecessors(Node hero, List<Node> nodes) => nodes
+        private static List<Node> Predecessors(Node hero, List<Node> nodes) => nodes
             .Where(node => node.succs
                 .Exists(nd => nd.Item1
                     .Equals(hero)))
             .ToList();
 
-        public static int heightOfNet(List<StrongComponent> components)
+        public static int HeightOfNet(List<StrongComponent> components)
         {
-            var sortedComponents = sortComponentTopology(components);
+            var sortedComponents = SortComponentTopology(components);
             //TODO now without complex cycles, think of bigger sc
             var height = 0;
             var currentDepth = -1;
@@ -48,9 +48,9 @@ namespace PetriVisualisation.Graph_Algorithms
             return height;
         }
 
-        public static int widthOfNet(List<StrongComponent> components)
+        public static int WidthOfNet(List<StrongComponent> components)
         {
-            var sortedComponents = sortComponentTopology(components);
+            var sortedComponents = SortComponentTopology(components);
             //TODO now without complex cycles, think of bigger sc
             var width = 1;
             var currentC = 0;
@@ -94,7 +94,7 @@ namespace PetriVisualisation.Graph_Algorithms
             return third.OrderBy(a => a.Item2).ToList();
         }
 
-        private static List<Tuple<Node, int>> SccBfsOrdering(StrongComponent component)
+        private static List<System.Tuple<Node, int>> SccBfsOrdering(StrongComponent component)
         {
             //! only 1 outgoing, only 1 ingoing
             //! in general extremely bad approach causing many bugs => t doesnt have to be the only node on its layer found by bfs
@@ -103,9 +103,9 @@ namespace PetriVisualisation.Graph_Algorithms
             var t = component.outgoing.Count == 0 ? component.nodes.Last() : component.outgoing.Last();
             var visited = component.nodes.ToDictionary(c => c, v => false);
             visited[s] = true;
-            var order = new List<Tuple<Node, int>> {new Tuple<Node, int>(s, 0)};
-            var queue = new Queue<Tuple<Node, int>>();
-            queue.Enqueue(new Tuple<Node, int>(s, 0));
+            var order = new List<System.Tuple<Node, int>> {new System.Tuple<Node, int>(s, 0)};
+            var queue = new Queue<System.Tuple<Node, int>>();
+            queue.Enqueue(new System.Tuple<Node, int>(s, 0));
             while (queue.Count > 0)
             {
                 var (node, ord) = queue.Dequeue();
@@ -118,7 +118,7 @@ namespace PetriVisualisation.Graph_Algorithms
                     .Where(nd => component.nodes.Contains(nd.Item1))
                     .Select(tup => tup.Item1).Where(nd=> !visited[nd]))
                 {
-                    order.Add(new Tuple<Node, int>(succ, ord+1));
+                    order.Add(new System.Tuple<Node, int>(succ, ord+1));
                     queue.Enqueue(order.Last());
                     visited[succ] = true;
                 }
@@ -131,7 +131,7 @@ namespace PetriVisualisation.Graph_Algorithms
                     .Where(nd => component.nodes.Contains(nd.Item1))
                     .Select(tup => tup.Item1).Where(nd=> !visited[nd]))
                 {
-                    order.Add(new Tuple<Node, int>(succ, ord-1));
+                    order.Add(new System.Tuple<Node, int>(succ, ord-1));
                     queue.Enqueue(order.Last());
                     visited[succ] = true;
                 }
@@ -146,7 +146,7 @@ namespace PetriVisualisation.Graph_Algorithms
             var visited = graph.nodes
                 .ConvertAll(node => new {node.attr.id, pair = new Pair<Node, bool>(node, false)})
                 .ToDictionary(a => a.id, a => a.pair);
-            dfs(graph.nodes[0].attr.id, visited, stack); //!what if 0 nodes ?
+            Dfs(graph.nodes[0].attr.id, visited, stack); //!what if 0 nodes ?
             visited = transposed.nodes
                 .ConvertAll(node => new {node.attr.id, pair = new Pair<Node, bool>(node, false)})
                 .ToDictionary(a => a.id, a => a.pair);
@@ -157,11 +157,11 @@ namespace PetriVisualisation.Graph_Algorithms
                 var node = stack.Pop();
                 if (!visited[node.attr.id].Second)
                 {
-                    componentDfs(node.attr.id, visited, scc, graph.nodes);
+                    ComponentDfs(node.attr.id, visited, scc, graph.nodes);
                 }
                 components.Add(new StrongComponent(scc));
             }
-            fillComponents(graph.nodes, components);
+            FillComponents(graph.nodes, components);
             return components;
         }
 
@@ -170,12 +170,12 @@ namespace PetriVisualisation.Graph_Algorithms
             var stack = new Stack<StrongComponent>();
             components.ForEach(c => c.flag = false);
             var start = components.First(c => c.incoming == null);
-            topoOnPetriGraph(stack, start, 0);
+            TopoOnPetriGraph(stack, start, 0);
             return stack.ToList();
         }
 
 
-        private static void topoOnPetriGraph(Stack<StrongComponent> stack, StrongComponent component, int depth)
+        private static void TopoOnPetriGraph(Stack<StrongComponent> stack, StrongComponent component, int depth)
         {
             component.flag = true;
             component.depth = depth;
@@ -183,16 +183,16 @@ namespace PetriVisualisation.Graph_Algorithms
                 foreach (var outside in component.outside
                     .Where(outside => !outside.flag || outside.depth < depth + 1))
                 {
-                    topoOnPetriGraph(stack, outside, depth + 1);
+                    TopoOnPetriGraph(stack, outside, depth + 1);
                 }
                 
             stack.Push(component);
         }
         
 
-        private static void fillComponents(List<Node> nodes, List<StrongComponent> components)
+        private static void FillComponents(List<Node> nodes, List<StrongComponent> components)
         {
-            components.ForEach(c => findInAndOut(c, nodes.Except(c.nodes).ToList())); 
+            components.ForEach(c => FindInAndOut(c, nodes.Except(c.nodes).ToList())); 
             foreach (var c in components)
             {
                 if (c.incoming != null)
@@ -222,7 +222,7 @@ namespace PetriVisualisation.Graph_Algorithms
             }
         }
 
-        private static void findInAndOut(StrongComponent c, List<Node> nodes)
+        private static void FindInAndOut(StrongComponent c, List<Node> nodes)
         {
             var res = new List<Node>();
             var res2 = new List<Node>();
@@ -243,26 +243,26 @@ namespace PetriVisualisation.Graph_Algorithms
             c.outgoing = res2.Count > 0 ? res2 : null;
         }
 
-        private static void componentDfs(string id, IReadOnlyDictionary<string, Pair<Node, bool>> visited, List<Node> components, List<Node> nodes)
+        private static void ComponentDfs(string id, IReadOnlyDictionary<string, Pair<Node, bool>> visited, List<Node> components, List<Node> nodes)
         {
             var current = visited.First(x => x.Key.Equals(id)).Value;
             current.Second = true;
-            foreach (var succesor in current.First.succs
-                .Where(succesor => !visited[succesor.Item1.attr.id].Second))
+            foreach (var successor in current.First.succs
+                .Where(successor => !visited[successor.Item1.attr.id].Second))
             {
-                componentDfs(succesor.Item1.attr.id, visited, components, nodes);
+                ComponentDfs(successor.Item1.attr.id, visited, components, nodes);
             }
             components.Add(nodes.Find(node => node.attr.id.Equals(id)));
         }
 
-        private static void dfs(string id, IReadOnlyDictionary<string, Pair<Node, bool>> visited, Stack<Node> stack)
+        private static void Dfs(string id, IReadOnlyDictionary<string, Pair<Node, bool>> visited, Stack<Node> stack)
         {
             var current = visited.First(x => x.Key.Equals(id)).Value;
             current.Second = true;
-            foreach (var succesor in current.First.succs
-                .Where(succesor => !visited[succesor.Item1.attr.id].Second))
+            foreach (var successor in current.First.succs
+                .Where(successor => !visited[successor.Item1.attr.id].Second))
             {
-                dfs(succesor.Item1.attr.id, visited, stack);
+                Dfs(successor.Item1.attr.id, visited, stack);
             }
             stack.Push(current.First);
         }

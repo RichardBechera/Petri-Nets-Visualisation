@@ -1,23 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using PetriVisualisation.Parser_files;
 
-
-namespace PetriVisualisation
+namespace PetriVisualisation.LoadInnerLogic
 {
 
     public class Loader
     {
-        public Graph graph;
+        private Graph _graph;
         private Rule _rule;
-        private Stack<IGraph> workingBranch = new Stack<IGraph>();
+        private readonly Stack<IGraph> _workingBranch = new Stack<IGraph>();
         private AttrType _attrOn = AttrType.None;
-        private List<string> _idPool = new List<string>();
-        private bool edgeRequired = false;
-        private List<string> _edgePool = new List<string>();
+        private readonly List<string> _idPool = new List<string>();
+        private bool _edgeRequired;
+        private readonly List<string> _edgePool = new List<string>();
         
         
         //TODO method should take path to file or later add raw text or file as it is
@@ -25,18 +25,22 @@ namespace PetriVisualisation
         public Graph LoadGraph(string path)
         {
             MyParseMethod(path);
-            return graph;
+            return _graph;
+        }
+
+        public async Task<Graph> LoadGraphAsync(string path)
+        {
+            return await Task.Run(() => LoadGraph(path));
         }
         
-        public void MyParseMethod(string path)
+        private void MyParseMethod(string path)
         {
-            ICharStream stream = CharStreams.fromPath(path); //random file for testing
+            var stream = CharStreams.fromPath(path); 
             ITokenSource lexer = new DOTLexer(stream);
             ITokenStream tokens = new CommonTokenStream(lexer);
-            DOTParser parser = new DOTParser(tokens);
-            parser.BuildParseTree = true;
+            var parser = new DOTParser(tokens) {BuildParseTree = true};
             IParseTree tree = parser.graph();
-            KeyPrinter printer = new KeyPrinter();
+            var printer = new KeyPrinter();
             printer.RuleMoved += CheckState;
             printer.Terminal += TerminalHandler;
             ParseTreeWalker.Default.Walk(printer, tree);
@@ -47,7 +51,7 @@ namespace PetriVisualisation
             _rule = e.Rule;
             if (e.Rule == Rule.Graph && e.Enter == Enter.Enter)
             {
-                graph = new Graph();
+                _graph = new Graph();
             }
 
             if (e.Enter == Enter.Leave)
@@ -55,11 +59,11 @@ namespace PetriVisualisation
                 switch (e.Rule)
                 {
                     case Rule.Graph:
-                        workingBranch.Pop();
+                        _workingBranch.Pop();
                         return; //TODO file end
                     case Rule.Subgraph:
                     case Rule.Node:
-                        workingBranch.Pop();
+                        _workingBranch.Pop();
                         break;
                     case Rule.AttrStmt:
                         AttributeAssigner();
@@ -67,9 +71,9 @@ namespace PetriVisualisation
                         _idPool.Clear();
                         break;
                     case Rule.EdgeStmt:
-                        edgeRequired = false;
+                        _edgeRequired = false;
                         _attrOn = AttrType.None;
-                        setEdgeFromPool();
+                        SetEdgeFromPool();
                         _edgePool.Clear();
                         break;
                 }
@@ -78,26 +82,26 @@ namespace PetriVisualisation
             switch (e.Rule)
             {
                 case Rule.Graph:
-                    workingBranch.Push(graph);
+                    _workingBranch.Push(_graph);
                     break;
                 case Rule.Subgraph:
-                    workingBranch.Push(new Subgraph());
-                    graph.subgraphs.Add(workingBranch.Peek());
+                    _workingBranch.Push(new Subgraph());
+                    _graph.subgraphs.Add(_workingBranch.Peek());
                     break;
                 case Rule.Node:
                     var node = new DotNode();
-                    node.belonging = workingBranch.Peek().id;
-                    workingBranch.Push(node);
-                    graph.succs.Add(workingBranch.Peek());
+                    node.belonging = _workingBranch.Peek().id;
+                    _workingBranch.Push(node);
+                    _graph.succs.Add(_workingBranch.Peek());
                     break;
                 case Rule.EdgeStmt:
-                    edgeRequired = true;
-                    graph.edges.Add(new Edge());
+                    _edgeRequired = true;
+                    _graph.edges.Add(new Edge());
                     break;
                 case Rule.Alist:
-                    if (edgeRequired)
+                    if (_edgeRequired)
                     {
-                        edgeRequired = false;
+                        _edgeRequired = false;
                         _attrOn = AttrType.EdgeStmt;
                     }
                     break;
@@ -106,7 +110,7 @@ namespace PetriVisualisation
 
         private void TerminalHandler(object sender, TerminalEventArgs e)
         {
-            if (graph == null)
+            if (_graph == null)
                 throw new Exception(message: "Graph has to be defined");
             switch (_rule)
             {
@@ -148,23 +152,23 @@ namespace PetriVisualisation
             switch (contains)
             {
                 case "strict":
-                    graph._strict = true;
+                    _graph.strict = true;
                     break;
                 case "graph":
-                    graph._type = GraphType.Graph;
+                    _graph.Type = GraphType.Graph;
                     break;
                 case "digraph":
-                    graph._type = GraphType.Digraph;
+                    _graph.Type = GraphType.Digraph;
                     break;
                 default:
-                    graph.id = contains;
+                    _graph.id = contains;
                     break;
             }
         }
 
         private void IdHandler(string contains)
         {
-            if (edgeRequired)
+            if (_edgeRequired)
             {
                 _edgePool.Add(contains);
                 return;
@@ -175,7 +179,7 @@ namespace PetriVisualisation
                 return;
             }
             //TODO check if Id is in correct format
-            workingBranch.Peek().id = contains;
+            _workingBranch.Peek().id = contains;
         }
 
         private void AttributeHandler(string contains)
@@ -199,13 +203,13 @@ namespace PetriVisualisation
                 switch (_attrOn)
                 {
                     case AttrType.Graph:
-                        workingBranch.Peek().GraphAttr.Add(_idPool[i], _idPool[i+1]);
+                        _workingBranch.Peek().GraphAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.Node:
-                        workingBranch.Peek().NodeAttr.Add(_idPool[i], _idPool[i+1]);
+                        _workingBranch.Peek().NodeAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.Edge:
-                        workingBranch.Peek().EdgeAttr.Add(_idPool[i], _idPool[i+1]);
+                        _workingBranch.Peek().EdgeAttr.Add(_idPool[i], _idPool[i+1]);
                         break;
                     case AttrType.None:
                     case AttrType.EdgeStmt:
@@ -222,19 +226,19 @@ namespace PetriVisualisation
                 throw new Exception(message:"Wrong attribute format");
             for (var i = 0; i < _edgePool.Count; i += 2)
             {
-                graph.edges.Last().EdgeAttr.Add(_edgePool[i], _edgePool[i+1]);
+                _graph.edges.Last().edgeAttr.Add(_edgePool[i], _edgePool[i+1]);
             }
         }
 
-        private void setEdgeFromPool()
+        private void SetEdgeFromPool()
         {
             if (_edgePool.Count < 2)
             {
                 throw new Exception(message:"Edge needs at least 2 vertexes");
             }
             
-            graph.edges.Last().headId = _edgePool[0];
-            graph.edges.Last().tailId = _edgePool[1];
+            _graph.edges.Last().headId = _edgePool[0];
+            _graph.edges.Last().tailId = _edgePool[1];
             //TODO later implement if more vertexes in one row
         }
         
