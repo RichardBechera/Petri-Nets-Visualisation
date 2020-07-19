@@ -26,22 +26,16 @@ namespace PetriVisualisation.visualisation
             canvas.Width = algos.widthOfNet(topo) * 85 + 150;
             canvas.Height = algos.heightOfNet(topo) * 70 + 35;    //TODO this seem like a little bit too much
             var shapes = TraverseComponents(topo, 35, (int)canvas.Width / 2);
-            var arrows = AddEdges(shapes.nodes, shapes.edges);
-            //!disgusting
-            foreach (var node in shapes.nodes)
+            var arrows = AddEdges(shapes);
+            foreach (var node in shapes)
             {
                 canvas.Children.Add(node.shape);
                 canvas.Children.Add(node.textBlock);
             }
-            foreach (var edge in shapes.edges)
+            foreach (var (line, tip) in arrows)
             {
-                canvas.Children.Add(edge.shape);
-                canvas.Children.Add(edge.textBlock);
-            }
-            foreach (var arrow in arrows)
-            {
-                canvas.Children.Add(arrow.Item1);
-                canvas.Children.Add(arrow.Item2);
+                canvas.Children.Add(line);
+                canvas.Children.Add(tip);
             }
 
             window.Background = Brushes.Black;
@@ -49,19 +43,14 @@ namespace PetriVisualisation.visualisation
             window.Content = canvas;
         }
 
-        private List<(Line, Polygon)> AddEdges(List<CanvasNode> nodes, List<CanvasNode> edges)
+        private List<(Line, Polygon)> AddEdges(List<CanvasNode> nodes)
         {
-            var arrows = (from node in nodes 
-                from succ 
-                    in node.node.succs 
-                select CreateLine(edges
-                    .Find(e => e.node.attr.id == succ.Item1.attr.id), node))
+            var arrows = nodes
+                .SelectMany(a => a.node.succs
+                    .Select(succ => nodes
+                        .Find(can => succ.Item1.attr.id == can.node.attr.id))
+                    .Select(head => CreateLine(head, a)))
                 .ToList();
-            arrows.AddRange(from edge in edges 
-                from succ 
-                    in edge.node.succs 
-                select CreateLine(nodes
-                    .Find(e => e.node.attr.id == succ.Item1.attr.id), edge));
 
             return arrows;
         }
@@ -92,12 +81,10 @@ namespace PetriVisualisation.visualisation
             return (line, tip);
         }
 
-        private (List<CanvasNode> nodes, List<CanvasNode> edges) 
-            TraverseComponents(List<StrongComponent> components, int top, int left)
+        private List<CanvasNode> TraverseComponents(List<StrongComponent> components, int top, int left)
         {
             if (components.Count < 1)
-                return (null, null);
-            var edges = new List<CanvasNode>();
+                return null;
             var nodes = new List<CanvasNode>();
             components = algos.sortComponentTopology(components);
             var bag = new List<StrongComponent>();
@@ -106,27 +93,23 @@ namespace PetriVisualisation.visualisation
             {
                 if (current != c.depth)
                 {
-                    TraverseBag(bag, edges, nodes, ref top, ref left);
+                    TraverseBag(bag, nodes, ref top, ref left);
                     current = c.depth;
                     bag.Clear();
                 }
                 bag.Add(c);
             }
-            TraverseBag(bag, edges, nodes, ref top, ref left);
-            return (nodes, edges);
+            TraverseBag(bag, nodes, ref top, ref left);
+            return nodes;
         }
 
-        private void TraverseBag(List<StrongComponent> bag, List<CanvasNode> edges,
-            List<CanvasNode> nodes, ref int top, ref int left)
+        private void TraverseBag(List<StrongComponent> bag, List<CanvasNode> nodes, ref int top, ref int left)
         {
             var leftOffset = (left * 2) / (bag.Count+1);
             var leftPosition = leftOffset;
             var height = 0;
-            //var topOffset
-            //TODO for more thn 1 node in strong component
-            foreach (var node in bag)//(var node in from sc in bag where sc.nodes.Count == 1 select sc.nodes.First()) from time whn i assumed scc to have 1 node
+            foreach (var orderedC in bag.Select(node => algos.SccOrdering(node)))
             {
-                var orderedC = algos.SccOrdering(node);
                 if (orderedC.Last().Item2 > height)
                     height = orderedC.Last().Item2;
                 if (orderedC.Count == 1)
@@ -139,17 +122,17 @@ namespace PetriVisualisation.visualisation
                     switch (fromSub)
                     {
                         case "rect":
-                            edges.Add(createRectangle(nodeW.attr.id, top, leftPosition, nodeW));
+                            nodes.Add(createRectangle(top, leftPosition, nodeW));    
                             break;
                         case "circle":
-                            nodes.Add(createEllipse(nodeW.attr.id, top, leftPosition, nodeW));
+                            nodes.Add(createEllipse(top, leftPosition, nodeW));
                             break;
                         //TODO Any other shapes ?
                     }
                 }
                 else
                 {
-                    VisualiseBigComponent(orderedC, edges, nodes, top, leftPosition, leftOffset);
+                    VisualiseBigComponent(orderedC, nodes, top, leftPosition, leftOffset);
                 }
                 leftPosition += leftOffset;
             }
@@ -157,8 +140,7 @@ namespace PetriVisualisation.visualisation
             top += (height + 1) * 60;
         }
 
-        private void VisualiseBigComponent(List<Tuple<Node, int, int>> order, List<CanvasNode> edges,
-            List<CanvasNode> nodes, int top, int middle, int widthOfA)
+        private void VisualiseBigComponent(List<Tuple<Node, int, int>> order, List<CanvasNode> nodes, int top, int middle, int widthOfA)
         {
             var left = middle - widthOfA / 4;
             var right = middle + widthOfA / 4;
@@ -178,17 +160,17 @@ namespace PetriVisualisation.visualisation
                 switch (fromSub)
                 {
                     case "rect":
-                        edges.Add(createRectangle(node.attr.id, topPosition, leftPosition, node));
+                        nodes.Add(createRectangle(topPosition, leftPosition, node));    
                         break;
                     case "circle":
-                        nodes.Add(createEllipse(node.attr.id, topPosition, leftPosition, node));
+                        nodes.Add(createEllipse(topPosition, leftPosition, node));
                         break;
                     //TODO Any other shapes ?
                 }
             }
         } 
 
-        private CanvasNode createEllipse(string name, int top, int left, Node node)
+        private CanvasNode createEllipse(int top, int left, Node node)
         {
             var circle =  new Ellipse()
             {
@@ -197,11 +179,11 @@ namespace PetriVisualisation.visualisation
                 Width = 50,
                 Stroke = Brushes.Black,
                 StrokeThickness = 2,
-                Name = name
+                Name = node.attr.id
             };
             var text = new TextBlock()
             {
-                Text = name,
+                Text = node.attr.id,
                 Width = 40,
                 Height = 20,
                 FontWeight = FontWeight.Black,
@@ -215,7 +197,7 @@ namespace PetriVisualisation.visualisation
             return new CanvasNode(circle, NodeType.Ellipse, text, 50, 50, left, top, node);
         }
 
-        private CanvasNode createRectangle(string name, int top, int left, Node node)
+        private CanvasNode createRectangle(int top, int left, Node node)
         {
             var rectangle =  new Rectangle()
             {
@@ -224,11 +206,11 @@ namespace PetriVisualisation.visualisation
                 Width = 50,
                 Stroke = Brushes.Black,
                 StrokeThickness = 2,
-                Name = name
+                Name = node.attr.id
             };
             var text = new TextBlock()
             {
-                Text = name,
+                Text = node.attr.id,
                 Width = 44,
                 Height = 20,
                 FontWeight = FontWeight.Black,
